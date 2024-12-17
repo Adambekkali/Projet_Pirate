@@ -1,7 +1,7 @@
 Jeu fait par :
 Tom Carvalho
 Tristan Bouvier 
-Ajanthan Anan
+Ajanthan Anandhakumar
 Adam Bekkali
 
 Lancer le jeu depuis menu.py
