@@ -1,0 +1,180 @@
+# Import de toute les ressources utiles au code 
+import os
+import Projet_Class
+import pygame
+
+# Initialisation de Pygame et des variables de la fenêtre
+pygame.init()
+large, haut = 1550, 800
+running = True
+screen = pygame.display.set_mode((large, haut))
+pygame.display.set_caption("Piscine Python")
+
+# Chargement et redimensionnement de l'image de fond
+background_image = pygame.image.load(r"Dossier\Image\decorprison.png")
+background_image = pygame.transform.scale(background_image, (large, haut))
+
+#dimensionnment du perso dd
+personnage_largeur, personnage_hauteur = 400, 350
+# Variables pour le défilement
+scroll_x, scroll_y = 0, 0
+
+
+
+# Création du personnage (importé de Projet_Class)
+personnage = Projet_Class.p1
+chemin_sprites=personnage.chemin_sprites
+# Chargement des sprites du personnage (exemple pour la marche à droite et à gauche)
+
+#-----------------------------------DROITE-------------------------------------------
+ 
+sprite_marche_droite = [
+                        pygame.transform.scale(pygame.image.load(os.path.join(chemin_sprites,f"walk{i}.png")),
+                        (personnage_largeur, personnage_hauteur)) for i in range(1,4)
+]
+#accroupis
+bas_droite=pygame.image.load(os.path.join(chemin_sprites,"jump1.png"))
+#saut
+sprite_saut_droite = pygame.transform.scale(pygame.image.load(os.path.join(chemin_sprites,"jump.png")), (personnage_largeur, personnage_hauteur))
+#attack
+sprit_attack_droite=[
+
+    pygame.transform.scale(pygame.image.load(os.path.join(chemin_sprites,f"attack{i}.png")),(personnage_largeur,personnage_hauteur))for i in range (1,4)
+]
+#stand
+sprite_stand_droite=pygame.transform.scale(pygame.image.load(os.path.join(chemin_sprites, "stand.png")), (personnage_largeur, personnage_hauteur))
+
+
+#-----------------------------------GAUCHE-------------------------------------------
+
+
+sprite_marche_gauche = [
+                         pygame.transform.scale(pygame.image.load(os.path.join(chemin_sprites,f"r_walk{i}.png")),
+                        (personnage_largeur, personnage_hauteur)) for i in range(1,4)
+                        
+]
+
+sprite_saut_gauche = pygame.transform.scale(pygame.image.load(os.path.join(chemin_sprites,"r_jump.png")), (personnage_largeur, personnage_hauteur))
+
+#stand
+sprite_stand_gauche=pygame.transform.scale(pygame.image.load(os.path.join(chemin_sprites, "r_stand.png")), (personnage_largeur, personnage_hauteur))
+
+
+
+
+# Fixer la position du personnage au centre de l'écran
+personnage.position = [large // 2 - personnage_largeur // 2, haut - personnage_hauteur - 50]  # Centré horizontalement en bas
+
+# Variables pour l'animation
+frame_index = 0
+animation_delay = 4  # Nombre d'itérations avant de changer le sprite
+animation_timer = 0
+
+orientation ="d"
+
+vitesse_saut=0
+gravite=2
+position_initiale_y = personnage.position[1]  # Position initiale du personnage (le sol)
+
+
+saut_en_cours=False
+
+# Boucle principale du jeu
+clock = pygame.time.Clock()
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+    # Déplacer le fond en fonction des touches pressées
+    keys = pygame.key.get_pressed()
+    
+
+    #SAUT
+    if keys[pygame.K_SPACE] and not saut_en_cours:
+         
+        saut_en_cours=True
+        vitesse_saut=-20
+        
+#SAUT en cours
+    if saut_en_cours:
+       
+       
+        personnage.position[1] += vitesse_saut  # Déplacer verticalement
+        #ralenti la montee accelere la descente
+        vitesse_saut += gravite         
+        #bouge en fonction de l'orientation du perso
+        if orientation=="g":
+            scroll_x+=personnage.vitesse 
+        if orientation=="d":
+            scroll_x-=personnage.vitesse
+
+        
+        #verifie touche pas le sol
+        if personnage.position[1] >= position_initiale_y:
+            personnage.position[1] = position_initiale_y  # Réinitialiser au sol
+            saut_en_cours = False
+
+    if not saut_en_cours :
+        if keys[pygame.K_s]:  # Descendre
+            scroll_y -= personnage.vitesse
+        if keys[pygame.K_q]:
+            orientation="g"  # Aller à gauche
+            scroll_x += personnage.vitesse
+        if keys[pygame.K_d]:
+            orientation="d"   # Aller à droite
+            scroll_x -= personnage.vitesse
+      
+        
+    # Gérer la répétition infinie du fond
+    scroll_x %= background_image.get_width()
+    scroll_y %= background_image.get_height()
+
+    # Affichage de l'arrière-plan
+    for x in range(-background_image.get_width(), large + background_image.get_width(), background_image.get_width()):
+        for y in range(-background_image.get_height(), haut + background_image.get_height(), background_image.get_height()):
+            screen.blit(background_image, (x + scroll_x, y + scroll_y))
+
+    # Animation du personnage (dépend de la direction du déplacement)
+    
+    #GAUCHE
+    if keys[pygame.K_q]:
+        animation_timer += 1
+        if animation_timer >= animation_delay:
+            animation_timer = 0
+            frame_index = (frame_index + 1) % len(sprite_marche_gauche)
+        screen.blit(sprite_marche_gauche[frame_index], personnage.position)
+    #DROITE
+    elif keys[pygame.K_d]:  # Si on va à droite
+        animation_timer += 1
+        if animation_timer >= animation_delay:
+            animation_timer = 0
+            frame_index = (frame_index + 1) % len(sprite_marche_droite)
+        screen.blit(sprite_marche_droite[frame_index], personnage.position)
+    ##SAUT
+    elif saut_en_cours:
+        if orientation=="d":
+           screen.blit(sprite_saut_droite,personnage.position)
+        else:
+           screen.blit(sprite_saut_gauche,personnage.position)
+    elif pygame.mouse.get_pressed :
+        animation_timer += 1
+        if animation_timer >= animation_delay:
+            animation_timer = 0
+            frame_index = (frame_index + 1) % len(sprite_marche_droite)
+        screen.blit(sprit_attack_droite[frame_index], personnage.position)
+
+
+        
+    elif orientation=="d":  # Si on ne se déplace pas, afficher un sprite de repos ou stationnaire
+        screen.blit(sprite_stand_droite, personnage.position)
+    else: 
+        screen.blit(sprite_stand_gauche, personnage.position)
+
+
+
+    # Mise à jour de l'affichage
+    pygame.display.flip()
+    clock.tick(60)
+
+pygame.quit()
